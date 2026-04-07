@@ -3,21 +3,35 @@ import { useForm } from "react-hook-form";
 import { supabase } from "../../../services/supabaseClient";
 import { useRouter } from "next/navigation";
 import { loginCred } from "@/src/types";
+import { useState } from "react";
+
 const page = () => {
-  const { register, handleSubmit } = useForm<loginCred>();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<loginCred>();
+  const [errorMessage, setError] = useState("");
+
   const router = useRouter();
+
   const onSubmit = async (data: loginCred) => {
     const { email, password } = data;
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: res, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      alert(error.message);
-    } else {
-      router.push("/dashboard");
+      console.error(error.message);
+      if (error.message.includes("Invalid login")) {
+        setError("Invalid email or password");
+      } else {
+        setError("Login failed. Try again.");
+      }
+      return;
     }
+    router.push("/dashboard");
   };
 
   return (
@@ -27,6 +41,7 @@ const page = () => {
       </div>
 
       <div className="w-full flex flex-col items-center justify-center">
+        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
         <form
           className="md:w-96 w-80 flex flex-col items-center justify-center"
           onSubmit={handleSubmit(onSubmit)}
@@ -114,13 +129,14 @@ const page = () => {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="mt-8 w-full cursor-pointer h-11 rounded-full text-white bg-indigo-500 hover:opacity-90 transition-opacity"
           >
-            Login
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
           <p className="text-gray-500/90 text-sm mt-4">
             Don’t have an account?{" "}
-            <a className="text-indigo-400 hover:underline" href="#">
+            <a className="text-indigo-400 hover:underline" href="/auth/sign-up">
               Sign up
             </a>
           </p>
