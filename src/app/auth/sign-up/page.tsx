@@ -19,22 +19,16 @@ const page = () => {
 
   const router = useRouter();
   const onSubmit = async (data: { email: any; password: any }) => {
-    console.log("clicked");
-
     setError("");
-
     const { email, password } = data;
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
-
     if (error) {
       setError(error.message);
       return;
     }
-
     router.push("/auth/log-in");
   };
 
@@ -138,6 +132,30 @@ const page = () => {
             {isSubmitting ? "Signing up..." : "Sign up"}
           </button>
         </form>
+        <div className="md:w-96 w-80 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-4 w-full my-5">
+            <div className="w-full h-px bg-gray-300/90"></div>
+            <p className="w-full text-nowrap text-sm text-gray-500/90">
+              or sign up with
+            </p>
+            <div className="w-full h-px bg-gray-300/90"></div>
+          </div>
+          <button
+            type="button"
+            className="w-full mt-6 cursor-pointer bg-gray-500/10 flex items-center justify-center h-12 rounded-full"
+          >
+            <img
+              src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/googleLogo.svg"
+              alt="googleLogo"
+            />
+          </button>
+          <p className="text-gray-500/90 text-sm mt-4">
+            Already have an account?{" "}
+            <a className="text-indigo-400 hover:underline" href="/auth/log-in">
+              Sign in
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
