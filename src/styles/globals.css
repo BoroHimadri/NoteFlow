@@ -2,6 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@theme {
+  --font-sans: var(--font-dm-sans), sans-serif;
+  --font-serif: var(--font-dm-serif), serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
