@@ -1,9 +1,13 @@
 "use client";
 
 import NewNoteCard from "@/src/components/dashboard/NewNoteCard";
-import NoteCard, { Note } from "@/src/components/dashboard/NoteCard";
-import RecentItem from "@/src/components/dashboard/RecentItem";
+import NoteCard from "@/src/components/dashboard/NoteCard";
+import NoteCardSkeleton from "@/src/components/dashboard/NoteCardSkeleton";
 import StatCard from "@/src/components/dashboard/StateCard";
+import api from "@/src/lib/axios";
+import { Note } from "@/src/types";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle } from "lucide-react";
 
 const PINNED_NOTES: Note[] = [
   {
@@ -50,45 +54,20 @@ const PINNED_NOTES: Note[] = [
   },
 ];
 
-const RECENT_ITEMS = [
-  {
-    id: "6",
-    title: "Team standup notes",
-    tag: "work",
-    editedAt: "2 hours ago",
-    icon: "📋",
-    iconBg: "bg-purple-50 dark:bg-purple-950",
-    iconColor: "text-purple-700 dark:text-purple-300",
-  },
-  {
-    id: "7",
-    title: "NoteFlow onboarding copy",
-    tag: "ideas",
-    editedAt: "yesterday",
-    icon: "💡",
-    iconBg: "bg-amber-50 dark:bg-amber-950",
-    iconColor: "text-amber-700 dark:text-amber-300",
-  },
-  {
-    id: "8",
-    title: "User interview — Priya S.",
-    tag: "research",
-    editedAt: "Apr 17",
-    icon: "🔬",
-    iconBg: "bg-blue-50 dark:bg-blue-950",
-    iconColor: "text-blue-700 dark:text-blue-300",
-  },
-  {
-    id: "9",
-    title: "Landing page copy v2",
-    tag: "work",
-    editedAt: "Apr 16",
-    icon: "✨",
-    iconBg: "bg-violet-50 dark:bg-violet-950",
-    iconColor: "text-violet-700 dark:text-violet-300",
-  },
-];
+const fetchDocuments = async () => {
+  // We use '/hello' because the baseURL is already '/api'
+  const { data } = await api.get("/documents");
+  console.log(data);
+
+  return data;
+};
+
 export default function Dashboard() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["documents"],
+    queryFn: fetchDocuments,
+  });
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page heading */}
@@ -146,31 +125,27 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {PINNED_NOTES.map((note) => (
+          {/* ── Loading ── */}
+          {isLoading &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <NoteCardSkeleton key={i} />
+            ))}
+
+          {/* ── Error ── */}
+          {error && (
+            <div className="col-span-full flex items-center gap-3 p-5 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 rounded-2xl text-sm text-red-600 dark:text-red-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              Something went wrong loading your notes. Try refreshing the page.
+            </div>
+          )}
+
+          {/* ── Data ── */}
+          {data?.document?.map((note: Note) => (
             <NoteCard key={note.id} note={note} />
           ))}
-          <NewNoteCard />
-        </div>
-      </section>
 
-      {/* Recently edited */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-[11px] uppercase tracking-widest font-medium text-zinc-400 dark:text-zinc-500">
-            Recently edited
-          </h2>
-          <a
-            href="/notes"
-            className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
-          >
-            See all →
-          </a>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {RECENT_ITEMS.map((item) => (
-            <RecentItem key={item.id} {...item} />
-          ))}
+          {/* Always show the new note card when not loading */}
+          {!isLoading && <NewNoteCard />}
         </div>
       </section>
     </div>

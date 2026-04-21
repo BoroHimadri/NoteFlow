@@ -29,7 +29,7 @@ const page = () => {
       setError(error.message);
       return;
     }
-    router.push("/auth/log-in");
+    router.push("/auth/sign-in");
   };
 
   return (
@@ -151,7 +151,7 @@ const page = () => {
           </button>
           <p className="text-gray-500/90 text-sm mt-4">
             Already have an account?{" "}
-            <a className="text-indigo-400 hover:underline" href="/auth/log-in">
+            <a className="text-indigo-400 hover:underline" href="/auth/sign-in">
               Sign in
             </a>
           </p>

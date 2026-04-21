@@ -1,17 +1,7 @@
 "use client";
 
+import { Note, NoteTag } from "@/src/types";
 import Link from "next/link";
-
-export type NoteTag = "work" | "personal" | "ideas" | "research" | "journal";
-
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  tag: NoteTag;
-  pinned?: boolean;
-  updatedAt: string; // formatted display string e.g. "Today, 10:42 am"
-}
 
 const TAG_STYLES: Record<NoteTag, string> = {
   work: "bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
@@ -43,14 +33,11 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
         border border-zinc-200 dark:border-zinc-800
         rounded-2xl p-5 transition-all duration-200
         hover:-translate-y-0.5 hover:border-zinc-300 dark:hover:border-zinc-700
-        hover:shadow-sm cursor-pointer
-        ${
-          note.pinned
-            ? "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-purple-500 before:rounded-t-2xl"
-            : ""
-        }
+        hover:shadow-sm cursor-pointer overflow-hidden
       `}
     >
+      <span className="absolute top-0 left-0 right-0 h-0.5 bg-purple-500 rounded-t-2xl" />
+
       {/* Top row */}
       <div className="flex items-start justify-between mb-3">
         <span
