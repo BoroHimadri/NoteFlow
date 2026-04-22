@@ -8,7 +8,7 @@ import Editor from "@/src/components/dashboard/Editor";
 import { useDebounce } from "@/src/hooks/useDebounce";
 
 export default function DocumentPage() {
-  const { id } = useParams();
+  const params = useParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
@@ -16,15 +16,18 @@ export default function DocumentPage() {
   const debouncedContent = useDebounce(content, 1000); // Wait 1s
   const debouncedTitle = useDebounce(title, 1000);
 
-  const { data, isLoading } = useQuery({
+  const id = params?.id as string;
+
+  const { data: doc, isLoading } = useQuery({
     queryKey: ["document", id],
     queryFn: async () => {
+      if (!id || id === "undefined") return null;
+
       const res = await api.get(`/documents/${id}`);
-      setTitle(res.data.document.title);
-      setContent(res.data.document.content);
-      return res.data.document;
+      return res.data.data;
     },
     enabled: !!id && id !== "undefined",
+    // retry: false,
   });
 
   const mutation = useMutation({
@@ -32,9 +35,9 @@ export default function DocumentPage() {
       api.patch(`/documents/${id}`, updates),
   });
 
-  //   // Simple auto-save logic
+  //  auto-save logic
   useEffect(() => {
-    if (!data) return;
+    if (!doc) return;
     const timeout = setTimeout(() => {
       mutation.mutate({ title, content });
     }, 1000); // Wait 1 second after typing stops

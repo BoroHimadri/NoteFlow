@@ -1,16 +1,8 @@
 "use client";
 
-import { Note, NoteTag } from "@/src/types";
+import { formatDate, stripHtml } from "@/src/lib/helper";
+import { Note } from "@/src/types";
 import Link from "next/link";
-
-const TAG_STYLES: Record<NoteTag, string> = {
-  work: "bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-  personal:
-    "bg-violet-50 text-violet-800 dark:bg-violet-950 dark:text-violet-300",
-  ideas: "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  research: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  journal: "bg-pink-50 text-pink-800 dark:bg-pink-950 dark:text-pink-300",
-};
 
 const PREVIEW_LENGTH = 160;
 
@@ -25,6 +17,7 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
     note.content.length > PREVIEW_LENGTH
       ? note.content.slice(0, PREVIEW_LENGTH).trimEnd() + "…"
       : note.content;
+  console.log("Notes", note);
 
   return (
     <div
@@ -40,16 +33,6 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
 
       {/* Top row */}
       <div className="flex items-start justify-between mb-3">
-        <span
-          className={`
-            text-[10px] font-semibold uppercase tracking-widest
-            px-2.5 py-1 rounded-full
-            ${TAG_STYLES[note.tag]}
-          `}
-        >
-          {note.tag}
-        </span>
-
         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           {note.pinned && (
             <span className="text-purple-500 text-xs select-none">📌</span>
@@ -88,16 +71,16 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
 
       {/* Preview */}
       <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed flex-1">
-        {preview}
+        {stripHtml(note.content)}
       </p>
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
         <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-          {note.updatedAt}
+          {formatDate(note.created_at)}
         </span>
         <Link
-          href={`/notes/${note.id}`}
+          href={`/dashboard/documents/${note.id}`}
           className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline"
           onClick={(e) => e.stopPropagation()}
         >

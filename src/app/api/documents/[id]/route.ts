@@ -1,32 +1,47 @@
 import { createClient } from "@/src/services/supabase/server";
 import { NextResponse } from "next/server";
 
+// app/api/documents/[id]/route.ts
+
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Note the Promise type here
 ) {
-  const supabase = createClient();
-  const { id } = params;
+  try {
+    // 1. Await the params
+    const { id } = await params;
 
-  // RLS will ensure the user only gets the doc if they are owner or collaborator
-  const { data, error } = await supabase
-    .from("documents")
-    .select("*")
-    .eq("id", id)
-    .single();
+    // 2. The Shield: Stop the request if the ID is bad
+    if (!id || id === "undefined" || id.length < 10) {
+      return NextResponse.json({ error: "Invalid UUID" }, { status: 400 });
+    }
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  return NextResponse.json({ success: true, document: data });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 404 });
+
+    return NextResponse.json({ success: true, data });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }
 
+// DO THE SAME FOR YOUR PATCH FUNCTION IN THIS FILE
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // IF THIS LOGS "undefined", WE FOUND THE CRASH
     console.log("PATCH Request ID:", id);
@@ -39,7 +54,7 @@ export async function PATCH(
     }
 
     const { title, content } = await request.json();
-    const supabase = createClient(); // Ensure this is the SERVER client
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from("documents")
