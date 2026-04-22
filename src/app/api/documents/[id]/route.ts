@@ -42,10 +42,6 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-
-    // IF THIS LOGS "undefined", WE FOUND THE CRASH
-    console.log("PATCH Request ID:", id);
-
     if (!id || id === "undefined") {
       return NextResponse.json(
         { error: "Invalid UUID format" },

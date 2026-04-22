@@ -11,6 +11,7 @@ export default function DocumentPage() {
   const params = useParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
 
   // 1. The "Debounced" versions of our state
   const debouncedContent = useDebounce(content, 1000); // Wait 1s
@@ -35,23 +36,35 @@ export default function DocumentPage() {
       api.patch(`/documents/${id}`, updates),
   });
 
+  // Sync state when data arrives
+  useEffect(() => {
+    if (doc && !hasLoadedInitialData) {
+      setTitle(doc.title);
+      setContent(doc.content);
+      setHasLoadedInitialData(true); // Mark that we've synced with the DB
+    }
+  }, [doc, hasLoadedInitialData]);
+
   //  auto-save logic
   useEffect(() => {
-    if (!doc) return;
+    // CRITICAL: Do not mutate if we haven't loaded the initial data yet!
+    if (!hasLoadedInitialData || !id) return;
+
     const timeout = setTimeout(() => {
       mutation.mutate({ title, content });
-    }, 1000); // Wait 1 second after typing stops
-    return () => clearTimeout(timeout);
-  }, [title, content]);
+    }, 1000);
 
-  //   2. This effect ONLY runs when the "Debounced" values change
+    return () => clearTimeout(timeout);
+  }, [title, content, hasLoadedInitialData, id]);
+
+  //   This effect ONLY runs when the "Debounced" values change
   useEffect(() => {
     if (debouncedContent || debouncedTitle) {
       mutation.mutate({ title: debouncedTitle, content: debouncedContent });
     }
   }, [debouncedContent, debouncedTitle]);
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <p>Loading ...</p>;
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-6">

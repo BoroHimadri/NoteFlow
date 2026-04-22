@@ -13,14 +13,10 @@ export default function NewNoteCard() {
         title: "Untitled Note",
         content: "",
       });
-
-      // Based on your log:
-      // response.data is { success: true, data: { id: '...', ... } }
       return response.data.data;
     },
     onSuccess: (newDoc) => {
       if (newDoc?.id) {
-        // Direct hit!
         router.push(`/dashboard/documents/${newDoc.id}`);
       } else {
         console.error("ID still missing from newDoc:", newDoc);

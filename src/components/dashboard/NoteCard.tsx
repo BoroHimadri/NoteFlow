@@ -17,7 +17,6 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
     note.content.length > PREVIEW_LENGTH
       ? note.content.slice(0, PREVIEW_LENGTH).trimEnd() + "…"
       : note.content;
-  console.log("Notes", note);
 
   return (
     <div
