@@ -9,56 +9,8 @@ import { Note } from "@/src/types";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 
-const PINNED_NOTES: Note[] = [
-  {
-    id: "1",
-    title: "Q3 Product Roadmap",
-    content:
-      "Finalize the feature list for the next release cycle. Key areas include onboarding revamp, AI suggestions rollout, and the new collaboration layer. Align with design team by end of month.",
-    tag: "work",
-    pinned: true,
-    updatedAt: "Today, 10:42 am",
-  },
-  {
-    id: "2",
-    title: "Competitive Analysis — Note Apps",
-    content:
-      "Notion vs Obsidian vs Roam vs Bear. Key differentiators: linking, offline mode, export options. Notion dominates teams, Obsidian owns the power user segment. Gap: elegant mobile-first with AI.",
-    tag: "research",
-    pinned: true,
-    updatedAt: "Yesterday, 3:15 pm",
-  },
-  {
-    id: "3",
-    title: "AI Features Brainstorm",
-    content:
-      "Auto-summarise long notes on open. Smart tagging from content. Continue writing button. Weekly digest email. Ask questions about your notes — semantic search over personal knowledge base.",
-    tag: "ideas",
-    updatedAt: "Mon, Apr 18",
-  },
-  {
-    id: "4",
-    title: "Books to Read in 2025",
-    content:
-      "Finished: Thinking Fast & Slow. Currently: The Almanack of Naval. Queue: Four Thousand Weeks, A Mind for Numbers, Deep Work (reread), Antifragile, Sapiens.",
-    tag: "personal",
-    updatedAt: "Sun, Apr 13",
-  },
-  {
-    id: "5",
-    title: "Weekly Reflection — Apr 14",
-    content:
-      "Shipped the auth flow. Spent too long on styling decisions — need to timebox better. Good sync with the backend team. Feeling clearer about the product direction. Next week: focus on the editor.",
-    tag: "journal",
-    updatedAt: "Sun, Apr 14",
-  },
-];
-
 const fetchDocuments = async () => {
-  // We use '/hello' because the baseURL is already '/api'
   const { data } = await api.get("/documents");
-  console.log(data);
-
   return data;
 };
 
@@ -138,14 +90,11 @@ export default function Dashboard() {
               Something went wrong loading your notes. Try refreshing the page.
             </div>
           )}
-
+          {!isLoading && <NewNoteCard />}
           {/* ── Data ── */}
-          {data?.document?.map((note: Note) => (
+          {data?.documents?.map((note: Note) => (
             <NoteCard key={note.id} note={note} />
           ))}
-
-          {/* Always show the new note card when not loading */}
-          {!isLoading && <NewNoteCard />}
         </div>
       </section>
     </div>

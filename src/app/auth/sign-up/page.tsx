@@ -1,10 +1,11 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { supabase } from "../../../services/supabaseClient";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/src/validationSchema";
+import { createClient } from "@/src/services/supabase/client";
 
 const page = () => {
   const {
@@ -16,7 +17,7 @@ const page = () => {
   });
 
   const [errorMessage, setError] = useState("");
-
+  const supabase = createClient();
   const router = useRouter();
   const onSubmit = async (data: { email: any; password: any }) => {
     setError("");
@@ -30,6 +31,7 @@ const page = () => {
       return;
     }
     router.push("/auth/sign-in");
+    router.refresh();
   };
 
   return (

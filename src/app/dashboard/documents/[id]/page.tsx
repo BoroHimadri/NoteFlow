@@ -1,0 +1,68 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api from "@/src/lib/axios";
+import Editor from "@/src/components/dashboard/Editor";
+import { useDebounce } from "@/src/hooks/useDebounce";
+
+export default function DocumentPage() {
+  const { id } = useParams();
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  // 1. The "Debounced" versions of our state
+  const debouncedContent = useDebounce(content, 1000); // Wait 1s
+  const debouncedTitle = useDebounce(title, 1000);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["document", id],
+    queryFn: async () => {
+      const res = await api.get(`/documents/${id}`);
+      setTitle(res.data.document.title);
+      setContent(res.data.document.content);
+      return res.data.document;
+    },
+    enabled: !!id && id !== "undefined",
+  });
+
+  const mutation = useMutation({
+    mutationFn: (updates: { title: string; content: string }) =>
+      api.patch(`/documents/${id}`, updates),
+  });
+
+  //   // Simple auto-save logic
+  useEffect(() => {
+    if (!data) return;
+    const timeout = setTimeout(() => {
+      mutation.mutate({ title, content });
+    }, 1000); // Wait 1 second after typing stops
+    return () => clearTimeout(timeout);
+  }, [title, content]);
+
+  //   2. This effect ONLY runs when the "Debounced" values change
+  useEffect(() => {
+    if (debouncedContent || debouncedTitle) {
+      mutation.mutate({ title: debouncedTitle, content: debouncedContent });
+    }
+  }, [debouncedContent, debouncedTitle]);
+
+  if (isLoading) return <p>Loading...</p>;
+
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-6">
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="text-4xl font-bold bg-transparent border-none outline-none mb-8 w-full"
+        placeholder="Untitled"
+      />
+      <Editor content={content} onChange={setContent} />
+
+      <div className="mt-4 text-xs text-gray-400">
+        {mutation.isPending ? "Saving..." : "All changes saved"}
+      </div>
+    </div>
+  );
+}

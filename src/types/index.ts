@@ -11,5 +11,5 @@ export interface Note {
   content: string;
   tag: NoteTag;
   pinned?: boolean;
-  updatedAt: string; // formatted display string e.g. "Today, 10:42 am"
+  updatedAt: string;
 }

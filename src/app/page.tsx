@@ -7,40 +7,8 @@ import { Sparkles, Zap, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { FEATURES, STATS } from "../lib/data";
-
-// ── Animated counter hook ─────────────────────────────────────────────────────
-function useCountUp(target: number, duration = 1500, start = false) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let startTime: number;
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCount(Math.floor(progress * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [start, target, duration]);
-  return count;
-}
-
-// ── Intersection observer hook ────────────────────────────────────────────────
-function useInView(threshold = 0.2) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setInView(true);
-      },
-      { threshold }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [threshold]);
-  return { ref, inView };
-}
+import { useCountUp } from "../hooks/useCountUp";
+import { useInView } from "../hooks/useInView";
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,12 +31,7 @@ export default function LandingPage() {
             >
               Features
             </a>
-            {/* <a
-              href="#pricing"
-              className="hover:text-purple-600 transition-colors"
-            >
-              Pricing
-            </a> */}
+
             <a
               href="#about"
               className="hover:text-purple-600 transition-colors"

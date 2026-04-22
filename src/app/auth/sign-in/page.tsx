@@ -1,9 +1,9 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { supabase } from "../../../services/supabaseClient";
 import { useRouter } from "next/navigation";
 import { loginCred } from "@/src/types";
 import { useState } from "react";
+import { createClient } from "@/src/services/supabase/client";
 
 const page = () => {
   const {
@@ -14,7 +14,7 @@ const page = () => {
   const [errorMessage, setError] = useState("");
 
   const router = useRouter();
-
+  const supabase = createClient();
   const onSubmit = async (data: loginCred) => {
     const { email, password } = data;
     const { data: res, error } = await supabase.auth.signInWithPassword({
@@ -32,6 +32,7 @@ const page = () => {
       return;
     }
     router.push("/dashboard");
+    router.refresh();
   };
 
   return (
