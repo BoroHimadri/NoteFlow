@@ -1,17 +1,13 @@
 import { createClient } from "@/src/services/supabase/server";
 import { NextResponse } from "next/server";
 
-// app/api/documents/[id]/route.ts
-
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // Note the Promise type here
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 1. Await the params
     const { id } = await params;
 
-    // 2. The Shield: Stop the request if the ID is bad
     if (!id || id === "undefined" || id.length < 10) {
       return NextResponse.json({ error: "Invalid UUID" }, { status: 400 });
     }
@@ -35,7 +31,6 @@ export async function GET(
   }
 }
 
-// DO THE SAME FOR YOUR PATCH FUNCTION IN THIS FILE
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }

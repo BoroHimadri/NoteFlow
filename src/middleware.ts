@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import router from "next/router";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -37,7 +38,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/sign-in", request.url));
   }
 
-  // 2. Prevent logged-in users from accessing /signin or /signup
+  // If not logged in, redirect with a 'next' search parameter
+  const currentPath = window.location.pathname;
+  router.push(`/login?next=${currentPath}`);
+
+  // Prevent logged-in users from accessing /signin or /signup
   if (
     user &&
     (request.nextUrl.pathname === "/auth/sign-in" ||

@@ -1,13 +1,22 @@
-import Sidebar from "../../components/dashboard/Sidebar";
-export default async function DashboardLayout({
+// src/app/dashboard/layout.tsx
+"use client";
+import Sidebar from "@/src/components/dashboard/Sidebar";
+import { usePathname } from "next/navigation";
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  // Check if we are on a specific document page
+  const isDocPage = pathname.includes("/documents/");
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <Sidebar />
-      <main className="pt-14 md:pt-0 md:ml-64">{children}</main>
+    <div className="flex">
+      {!isDocPage && <Sidebar />}
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 
 import { Sparkles, Zap, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -83,13 +83,7 @@ export default function LandingPage() {
             >
               Features
             </a>
-            {/* <a
-              href="#pricing"
-              className="text-zinc-600 hover:text-purple-600"
-              onClick={() => setMenuOpen(false)}
-            >
-              Pricing
-            </a> */}
+
             <a
               href="#about"
               className="text-zinc-600 hover:text-purple-600"
@@ -187,38 +181,33 @@ export default function LandingPage() {
               <div className="flex gap-4">
                 {/* Sidebar preview */}
                 <div className="hidden sm:flex flex-col gap-2 w-36 shrink-0">
-                  {["Dashboard", "All Notes", "Pinned", "Tags"].map(
-                    (item, i) => (
-                      <div
-                        key={item}
-                        className={`h-8 rounded-lg flex items-center px-3 text-xs font-medium ${
-                          i === 0
-                            ? "bg-purple-100 text-purple-700"
-                            : "text-zinc-400"
-                        }`}
-                      >
-                        {item}
-                      </div>
-                    )
-                  )}
+                  {["Dashboard", "All Notes", "Pinned"].map((item, i) => (
+                    <div
+                      key={item}
+                      className={`h-8 rounded-lg flex items-center px-3 text-xs font-medium ${
+                        i === 0
+                          ? "bg-purple-100 text-purple-700"
+                          : "text-zinc-400"
+                      }`}
+                    >
+                      {item}
+                    </div>
+                  ))}
                 </div>
                 {/* Cards preview */}
                 <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
-                      tag: "WORK",
                       title: "Q3 Roadmap",
                       color: "bg-purple-50 text-purple-700",
                       pinned: true,
                     },
                     {
-                      tag: "IDEAS",
                       title: "AI Features",
                       color: "bg-amber-50 text-amber-700",
-                      pinned: false,
+                      pinned: true,
                     },
                     {
-                      tag: "RESEARCH",
                       title: "Competitive Analysis",
                       color: "bg-blue-50 text-blue-700",
                       pinned: true,
@@ -230,11 +219,6 @@ export default function LandingPage() {
                         card.pinned ? "border-t-2 border-t-purple-400" : ""
                       }`}
                     >
-                      <span
-                        className={`text-[9px] font-bold tracking-widest px-2 py-0.5 rounded-full ${card.color}`}
-                      >
-                        {card.tag}
-                      </span>
                       <p className="text-xs font-serif font-normal text-zinc-800 mt-2 leading-snug">
                         {card.title}
                       </p>
@@ -358,107 +342,6 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
-
-      {/* ── Pricing ── */}
-      {/* <section id="pricing" className="py-24 px-5">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <Badge className="mb-4 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-50">
-              Pricing
-            </Badge>
-            <h2 className="font-serif text-4xl sm:text-5xl text-zinc-900">
-              Simple, <span className="italic text-purple-600">honest</span>{" "}
-              pricing
-            </h2>
-            <p className="text-zinc-500 mt-4">
-              Start free. Upgrade when you need more.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`
-                  relative rounded-2xl p-7 border transition-all duration-300
-                  ${
-                    plan.highlight
-                      ? "bg-purple-600 border-purple-600 shadow-2xl shadow-purple-200 scale-105"
-                      : "bg-white border-zinc-200 hover:border-purple-200 hover:shadow-md"
-                  }
-                `}
-              >
-                {plan.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-900 text-[11px] font-bold px-3 py-1 rounded-full tracking-wide">
-                    MOST POPULAR
-                  </span>
-                )}
-                <p
-                  className={`text-sm font-semibold mb-1 ${
-                    plan.highlight ? "text-purple-200" : "text-zinc-500"
-                  }`}
-                >
-                  {plan.name}
-                </p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span
-                    className={`font-serif text-4xl ${
-                      plan.highlight ? "text-white" : "text-zinc-900"
-                    }`}
-                  >
-                    ${plan.price}
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      plan.highlight ? "text-purple-300" : "text-zinc-400"
-                    }`}
-                  >
-                    /mo
-                  </span>
-                </div>
-                <p
-                  className={`text-sm mb-6 ${
-                    plan.highlight ? "text-purple-200" : "text-zinc-400"
-                  }`}
-                >
-                  {plan.desc}
-                </p>
-
-                <ul className="space-y-3 mb-7">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm">
-                      <Check
-                        className={`w-4 h-4 shrink-0 ${
-                          plan.highlight ? "text-purple-200" : "text-purple-600"
-                        }`}
-                      />
-                      <span
-                        className={
-                          plan.highlight ? "text-purple-100" : "text-zinc-600"
-                        }
-                      >
-                        {f}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link href="/auth/sign-up">
-                  <Button
-                    className={`w-full rounded-xl h-10 font-medium ${
-                      plan.highlight
-                        ? "bg-white text-purple-700 hover:bg-purple-50"
-                        : "bg-purple-600 hover:bg-purple-700 text-white"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
 
       {/* ── Footer ── */}
       <footer id="about" className="bg-zinc-950 text-white py-16 px-5">
