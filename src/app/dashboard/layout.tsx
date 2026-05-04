@@ -1,22 +1,19 @@
-// src/app/dashboard/layout.tsx
+// layout.tsx — no conditional, always same HTML
 "use client";
+
 import Sidebar from "@/src/components/dashboard/Sidebar";
-import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  // Check if we are on a specific document page
-  const isDocPage = pathname.includes("/documents/");
-
   return (
     <div className="flex">
-      {!isDocPage && <Sidebar />}
-      <main className="flex-1">{children}</main>
+      <Sidebar />
+      <main className="flex-1 lg:pl-64">
+        <div className="lg:p-8 w-full">{children}</div>
+      </main>
     </div>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 import { useForm } from "react-hook-form";
-
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/src/validationSchema";
 import { createClient } from "@/src/services/supabase/client";
+import { toast } from "react-toastify";
 
 const page = () => {
   const {
@@ -19,6 +19,10 @@ const page = () => {
   const [errorMessage, setError] = useState("");
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get the 'next' destination (e.g., /dashboard/documents/123)
+  const nextDestination = searchParams.get("next") || "/dashboard";
   const onSubmit = async (data: { email: any; password: any }) => {
     setError("");
     const { email, password } = data;
@@ -30,8 +34,12 @@ const page = () => {
       setError(error.message);
       return;
     }
-    router.push("/auth/sign-in");
-    router.refresh();
+
+    if (!error) {
+      toast.success("Account created!");
+      router.push(nextDestination);
+      router.refresh();
+    }
   };
 
   return (

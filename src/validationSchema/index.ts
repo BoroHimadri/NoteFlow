@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const signUpSchema = z
   .object({
-    email: z.string().email("Invalid email"),
+    email: z.email("Invalid email"),
     password: z.string().min(6),
     confirmPassword: z.string(),
   })
@@ -10,6 +10,7 @@ export const signUpSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+export type SignUpCred = z.infer<typeof createDocumentSchema>;
 
 export const documentSchema = z.object({
   id: z.uuid(),

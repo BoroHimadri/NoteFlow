@@ -78,6 +78,9 @@ export default function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
         <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
           {formatDate(note.created_at)}
         </span>
+        {/* <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+       Last Updated   {formatDate(note.created_at)}
+        </span> */}
         <Link
           href={`/dashboard/documents/${note.id}`}
           className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline"

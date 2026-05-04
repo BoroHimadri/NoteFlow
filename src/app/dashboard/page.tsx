@@ -23,15 +23,13 @@ export default function Dashboard() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page heading */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-2xl text-zinc-900 dark:text-zinc-50">
-            Good morning 👋
-          </h1>
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-0.5">
-            Here's what you've been working on
-          </p>
-        </div>
+      <div className=" flex flex-col">
+        <h1 className="font-serif text-2xl text-zinc-900 dark:text-zinc-50 mt-7 lg:mt-0">
+          Good morning 👋
+        </h1>
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">
+          Here's what you've been working on
+        </p>
       </div>
 
       {/* Stats row */}

@@ -1,8 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu } from "lucide-react";
-
 import {
   Sheet,
   SheetContent,
@@ -10,12 +10,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
-
 import { Button } from "../ui/button";
 import SidebarContent from "./Sidebarcontent";
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname?.includes("/documents/")) return null; // ← hide on doc pages
 
   return (
     <>

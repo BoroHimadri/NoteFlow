@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import api from "@/src/lib/axios";
-import Editor from "@/src/components/dashboard/Editor";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { Button } from "@/src/components/ui/button";
-import { LockIcon, Share2Icon } from "lucide-react";
+import { ArrowLeft, Check, Clock, LockIcon, Share2Icon } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { Spinner } from "@/src/components/ui/spinner";
 
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import EditorToolbar from "@/src/components/common/EditorToolbar";
+import Loader from "@/src/components/common/Loader";
 export default function DocumentPage() {
   const params = useParams();
   const [title, setTitle] = useState("");
@@ -19,8 +23,47 @@ export default function DocumentPage() {
 
   const debouncedContent = useDebounce(content, 1000); // Wait 1s
   const debouncedTitle = useDebounce(title, 1000);
-
+  const [activeId, setActiveId] = useState<string | null>(null);
   const id = params?.id as string;
+  const [copied, setCopied] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Start writing… your ideas belong here.",
+      }),
+    ],
+    content: "",
+    immediatelyRender: false,
+    onUpdate({ editor }) {
+      const html = editor.getHTML();
+      setContent(html);
+      const text = editor.getText();
+      setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
+    },
+    editorProps: {
+      attributes: {
+        class:
+          "focus:outline-none min-h-[60vh] text-zinc-800 dark:text-zinc-200",
+      },
+    },
+  });
+
+  // Reset the sync flag when the document ID changes
+  useEffect(() => {
+    setHasLoadedInitialData(false);
+  }, [id]);
+
+  // Auto-resize title textarea
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = "auto";
+      titleRef.current.style.height = titleRef.current.scrollHeight + "px";
+    }
+  }, [title]);
 
   const {
     data: doc,
@@ -45,30 +88,47 @@ export default function DocumentPage() {
 
   // Sync state when data arrives
   useEffect(() => {
-    if (doc && !hasLoadedInitialData) {
+    if (doc && editor && !hasLoadedInitialData) {
+      // 1. Set the content
       setTitle(doc.title);
       setContent(doc.content);
-      setHasLoadedInitialData(true);
+      editor.commands.setContent(doc.content, { emitUpdate: false });
+
+      // 2. Lock the ID so the saver knows this specific note is ready
+      setActiveId(id);
+
+      setTimeout(() => {
+        setHasLoadedInitialData(true);
+      }, 100); // Increased slightly for safety
     }
-  }, [doc, hasLoadedInitialData]);
+  }, [doc, editor, hasLoadedInitialData, id]);
 
   //  auto-save logic
+  // useEffect(() => {
+  //   if (!hasLoadedInitialData || !id) return;
+
+  //   const timeout = setTimeout(() => {
+  //     mutation.mutate({ title, content });
+  //   }, 1000);
+
+  //   return () => clearTimeout(timeout);
+  // }, [title, content, hasLoadedInitialData, id]);
+
+  // This effect ONLY runs when the "Debounced" values change
   useEffect(() => {
-    if (!hasLoadedInitialData || !id) return;
+    // LOCK 1: Is the initial load done?
+    if (!hasLoadedInitialData) return;
 
-    const timeout = setTimeout(() => {
-      mutation.mutate({ title, content });
-    }, 1000);
+    // LOCK 2: Does the loaded data match the current URL? (Prevents ghost overwrites)
+    if (activeId !== id) return;
 
-    return () => clearTimeout(timeout);
-  }, [title, content, hasLoadedInitialData, id]);
-
-  //   This effect ONLY runs when the "Debounced" values change
-  useEffect(() => {
     if (debouncedContent || debouncedTitle) {
-      mutation.mutate({ title: debouncedTitle, content: debouncedContent });
+      mutation.mutate({
+        title: debouncedTitle || title,
+        content: debouncedContent || content,
+      });
     }
-  }, [debouncedContent, debouncedTitle]);
+  }, [debouncedContent, debouncedTitle, hasLoadedInitialData, id, activeId]);
 
   const handleCopyLink = () => {
     // 1. Get the current URL
@@ -83,6 +143,12 @@ export default function DocumentPage() {
         console.error("Could not copy text: ", err);
         toast.error("Failed to copy link.");
       });
+  };
+
+  const handleShare = () => {
+    handleCopyLink();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   //request access api
@@ -105,18 +171,11 @@ export default function DocumentPage() {
     requestMutation.mutate(id);
   };
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="w-10 h-10 text-purple-600 animate-spin" />
-          <p className="text-sm font-medium text-zinc-500 animate-pulse">
-            Loading your note...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    setHasLoadedInitialData(false);
+  }, [id]);
+
+  if (isLoading) return <Loader />;
 
   //The Request Access
   if (error || !doc) {
@@ -149,35 +208,109 @@ export default function DocumentPage() {
     );
   }
   return (
-    <div className="max-w-4xl mx-auto py-10 px-6">
+    <div className="min-h-screen bg-[#FAFAF8]">
       <ToastContainer />
-      <div className=" flex justify-between items-center mb-8 ">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="text-4xl font-bold bg-transparent border-none outline-none w-full"
-          placeholder="Untitled"
-        />{" "}
-        <Button
-          onClick={handleCopyLink}
-          className="
-          flex items-center gap-2
-          bg-purple-500 hover:bg-purple-700
-          text-white text-sm font-medium
-          p-5 rounded-xl
-          transition-colors duration-150
-          cursor-pointer
-        "
-        >
-          <Share2Icon className="w-4 h-4" />
-          Share this doc
-        </Button>
+
+      {/* ── Top bar ─────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-[#FAFAF8]/90 backdrop-blur-sm border-b border-zinc-200/60">
+        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+          {/* Left — back + save status */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => window.history.back()}
+              className="text-zinc-400 hover:text-zinc-700 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {mutation.isPending ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs text-zinc-400">Saving…</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-xs text-zinc-400">Saved</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right — word count + share */}
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-400">
+              <Clock className="w-3 h-3" />
+              {wordCount} {wordCount === 1 ? "word" : "words"}
+            </span>
+
+            <Button
+              onClick={handleShare}
+              size="sm"
+              className={`
+              flex items-center gap-2 rounded-xl px-4 h-8 text-xs font-medium
+              transition-all duration-200
+              ${
+                copied
+                  ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              }
+            `}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Share2Icon className="w-3.5 h-3.5" />
+                  Share
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <Editor content={content} onChange={setContent} />
+      {/* ── Document body ────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* Title */}
+        <textarea
+          ref={titleRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Untitled"
+          rows={1}
+          className="
+          w-full resize-none overflow-hidden
+          bg-transparent border-none outline-none
+          font-serif text-4xl sm:text-5xl text-zinc-900 dark:text-zinc-50
+          placeholder:text-zinc-300 dark:placeholder:text-zinc-700
+          leading-tight mb-8
+        "
+        />
 
-      <div className="mt-4 text-xs text-gray-400">
-        {mutation.isPending ? "Saving..." : "All changes saved"}
+        {/* Editor card */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm overflow-hidden">
+          {/* Toolbar */}
+          <EditorToolbar editor={editor} />
+
+          {/* Editor content */}
+          <div className="px-8 py-6 text-[15px] leading-7">
+            <EditorContent editor={editor} />
+          </div>
+        </div>
+
+        {/* Bottom meta */}
+        <div className="mt-4 flex items-center justify-between text-xs text-zinc-400 px-1">
+          <span>{wordCount} words</span>
+          <span className="sm:hidden">
+            {mutation.isPending ? "Saving…" : "All changes saved"}
+          </span>
+        </div>
       </div>
     </div>
   );
