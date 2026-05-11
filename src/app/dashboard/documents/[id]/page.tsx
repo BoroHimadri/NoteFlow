@@ -10,11 +10,10 @@ import { ArrowLeft, Check, Clock, LockIcon, Share2Icon } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { Spinner } from "@/src/components/ui/spinner";
 
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
+import { EditorContent } from "@tiptap/react";
 import EditorToolbar from "@/src/components/common/EditorToolbar";
 import Loader from "@/src/components/common/Loader";
+import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
 export default function DocumentPage() {
   const params = useParams();
   const [title, setTitle] = useState("");
@@ -29,30 +28,12 @@ export default function DocumentPage() {
   const [wordCount, setWordCount] = useState(0);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: "Start writing… your ideas belong here.",
-      }),
-    ],
-    content: "",
-    immediatelyRender: false,
-    onUpdate({ editor }) {
-      const html = editor.getHTML();
-      setContent(html);
-      const text = editor.getText();
-      setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
-    },
-    editorProps: {
-      attributes: {
-        class:
-          "focus:outline-none min-h-[60vh] text-zinc-800 dark:text-zinc-200",
-      },
-    },
+  //edtor hook
+  const editor = useDocumentEditor((html, text) => {
+    setContent(html);
+    setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
   });
 
-  // Reset the sync flag when the document ID changes
   useEffect(() => {
     setHasLoadedInitialData(false);
   }, [id]);
@@ -65,6 +46,7 @@ export default function DocumentPage() {
     }
   }, [title]);
 
+  //fetch created note
   const {
     data: doc,
     isLoading,
@@ -81,6 +63,7 @@ export default function DocumentPage() {
     retry: false,
   });
 
+  //updating the note
   const mutation = useMutation({
     mutationFn: (updates: { title: string; content: string }) =>
       api.patch(`/documents/${id}`, updates),
@@ -103,25 +86,10 @@ export default function DocumentPage() {
     }
   }, [doc, editor, hasLoadedInitialData, id]);
 
-  //  auto-save logic
-  // useEffect(() => {
-  //   if (!hasLoadedInitialData || !id) return;
-
-  //   const timeout = setTimeout(() => {
-  //     mutation.mutate({ title, content });
-  //   }, 1000);
-
-  //   return () => clearTimeout(timeout);
-  // }, [title, content, hasLoadedInitialData, id]);
-
   // This effect ONLY runs when the "Debounced" values change
   useEffect(() => {
-    // LOCK 1: Is the initial load done?
     if (!hasLoadedInitialData) return;
-
-    // LOCK 2: Does the loaded data match the current URL? (Prevents ghost overwrites)
     if (activeId !== id) return;
-
     if (debouncedContent || debouncedTitle) {
       mutation.mutate({
         title: debouncedTitle || title,
@@ -170,10 +138,6 @@ export default function DocumentPage() {
   const handleRequestAccess = (id: string) => {
     requestMutation.mutate(id);
   };
-
-  useEffect(() => {
-    setHasLoadedInitialData(false);
-  }, [id]);
 
   if (isLoading) return <Loader />;
 
