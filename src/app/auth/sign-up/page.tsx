@@ -7,7 +7,9 @@ import { signUpSchema } from "@/src/validationSchema";
 import { createClient } from "@/src/services/supabase/client";
 import { toast } from "react-toastify";
 
-const page = () => {
+import { Suspense } from "react";
+
+const SignUpForm = () => {
   const {
     register,
     handleSubmit,
@@ -171,4 +173,10 @@ const page = () => {
   );
 };
 
-export default page;
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignUpForm />
+    </Suspense>
+  );
+}

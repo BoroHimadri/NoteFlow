@@ -73,7 +73,7 @@ export default function DocumentPage() {
     enabled: !!id && id !== "undefined",
     retry: false,
     staleTime: 0, // Always consider data stale so it refetches on mount
-    gcTime: 0,    // Don't cache this for long
+    gcTime: 0, // Don't cache this for long
   });
 
   //updating the note
@@ -90,7 +90,7 @@ export default function DocumentPage() {
   useEffect(() => {
     if (doc && editor && !hasLoadedInitialData) {
       console.log("Syncing initial data:", { title: doc.title, id });
-      
+
       const initialTitle = doc.title || "";
       const initialContent = doc.content || "";
 
@@ -105,15 +105,20 @@ export default function DocumentPage() {
       // Small delay to let the state settle before allowing auto-save
       const timer = setTimeout(() => {
         setHasLoadedInitialData(true);
-      }, 500); 
-      
+      }, 500);
+
       return () => clearTimeout(timer);
     }
   }, [doc, editor, hasLoadedInitialData, id]);
 
   // Auto-save logic
   useEffect(() => {
-    if (!hasLoadedInitialData || !activeId || activeId !== id || mutation.isPending)
+    if (
+      !hasLoadedInitialData ||
+      !activeId ||
+      activeId !== id ||
+      mutation.isPending
+    )
       return;
 
     // 1. Only save if the debounced values have "settled" (match the current state)
@@ -145,8 +150,6 @@ export default function DocumentPage() {
         }
       );
     }
-    // Removed mutation from dependencies to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     debouncedContent,
     debouncedTitle,
