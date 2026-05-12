@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/src/lib/axios";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { Button } from "@/src/components/ui/button";
@@ -14,8 +14,10 @@ import { EditorContent } from "@tiptap/react";
 import EditorToolbar from "@/src/components/common/EditorToolbar";
 import Loader from "@/src/components/common/Loader";
 import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
+
 export default function DocumentPage() {
   const params = useParams();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
@@ -27,6 +29,7 @@ export default function DocumentPage() {
   const [copied, setCopied] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const lastSavedRef = useRef({ title: "", content: "" });
 
   //edtor hook
   const editor = useDocumentEditor((html, text) => {
@@ -34,9 +37,17 @@ export default function DocumentPage() {
     setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
   });
 
+  // Reset state when ID changes
   useEffect(() => {
     setHasLoadedInitialData(false);
-  }, [id]);
+    setTitle("");
+    setContent("");
+    setActiveId(null);
+    lastSavedRef.current = { title: "", content: "" };
+    if (editor && !editor.isDestroyed) {
+      editor.commands.setContent("", { emitUpdate: false });
+    }
+  }, [id, editor]);
 
   // Auto-resize title textarea
   useEffect(() => {
@@ -61,42 +72,90 @@ export default function DocumentPage() {
     },
     enabled: !!id && id !== "undefined",
     retry: false,
+    staleTime: 0, // Always consider data stale so it refetches on mount
+    gcTime: 0,    // Don't cache this for long
   });
 
   //updating the note
   const mutation = useMutation({
     mutationFn: (updates: { title: string; content: string }) =>
       api.patch(`/documents/${id}`, updates),
+    onSuccess: () => {
+      // Invalidate the query to ensure we have the latest version in the cache
+      queryClient.invalidateQueries({ queryKey: ["document", id] });
+    },
   });
 
   // Sync state when data arrives
   useEffect(() => {
     if (doc && editor && !hasLoadedInitialData) {
-      // 1. Set the content
-      setTitle(doc.title);
-      setContent(doc.content);
-      editor.commands.setContent(doc.content, { emitUpdate: false });
+      console.log("Syncing initial data:", { title: doc.title, id });
+      
+      const initialTitle = doc.title || "";
+      const initialContent = doc.content || "";
 
-      // 2. Lock the ID so the saver knows this specific note is ready
+      setTitle(initialTitle);
+      setContent(initialContent);
+      editor.commands.setContent(initialContent, { emitUpdate: false });
+
+      // Initialize tracking refs with the actual data from DB
+      lastSavedRef.current = { title: initialTitle, content: initialContent };
       setActiveId(id);
 
-      setTimeout(() => {
+      // Small delay to let the state settle before allowing auto-save
+      const timer = setTimeout(() => {
         setHasLoadedInitialData(true);
-      }, 100); // Increased slightly for safety
+      }, 500); 
+      
+      return () => clearTimeout(timer);
     }
   }, [doc, editor, hasLoadedInitialData, id]);
 
-  // This effect ONLY runs when the "Debounced" values change
+  // Auto-save logic
   useEffect(() => {
-    if (!hasLoadedInitialData) return;
-    if (activeId !== id) return;
-    if (debouncedContent || debouncedTitle) {
-      mutation.mutate({
-        title: debouncedTitle || title,
-        content: debouncedContent || content,
-      });
+    if (!hasLoadedInitialData || !activeId || activeId !== id || mutation.isPending)
+      return;
+
+    // 1. Only save if the debounced values have "settled" (match the current state)
+    const isSettled = debouncedTitle === title && debouncedContent === content;
+    if (!isSettled) return;
+
+    // 2. Only save if something has actually changed from what's on the server
+    const hasChanged =
+      debouncedTitle !== lastSavedRef.current.title ||
+      debouncedContent !== lastSavedRef.current.content;
+
+    if (hasChanged) {
+      // Capture current values to update ref on success
+      const titleToSave = debouncedTitle;
+      const contentToSave = debouncedContent;
+
+      mutation.mutate(
+        {
+          title: titleToSave,
+          content: contentToSave,
+        },
+        {
+          onSuccess: () => {
+            lastSavedRef.current = {
+              title: titleToSave,
+              content: contentToSave,
+            };
+          },
+        }
+      );
     }
-  }, [debouncedContent, debouncedTitle, hasLoadedInitialData, id, activeId]);
+    // Removed mutation from dependencies to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    debouncedContent,
+    debouncedTitle,
+    title,
+    content,
+    hasLoadedInitialData,
+    id,
+    activeId,
+  ]);
 
   const handleCopyLink = () => {
     // 1. Get the current URL
@@ -128,7 +187,7 @@ export default function DocumentPage() {
     onSuccess: () => {
       toast.success("Access requested! The owner will review your request.");
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       const message =
         error.response?.data?.error || "Failed to request access.";
       toast.error(message);
