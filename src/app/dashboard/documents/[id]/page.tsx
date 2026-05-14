@@ -14,6 +14,7 @@ import { EditorContent } from "@tiptap/react";
 import EditorToolbar from "@/src/components/common/EditorToolbar";
 import Loader from "@/src/components/common/Loader";
 import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
+import AIAssistant from "@/src/components/dashboard/AIAssistant";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -302,7 +303,7 @@ export default function DocumentPage() {
       </div>
 
       {/* ── Document body ────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Title */}
         <textarea
           ref={titleRef}
@@ -315,7 +316,7 @@ export default function DocumentPage() {
           bg-transparent border-none outline-none
           font-serif text-4xl sm:text-5xl text-zinc-900 dark:text-zinc-50
           placeholder:text-zinc-300 dark:placeholder:text-zinc-700
-          leading-tight mb-8
+          leading-tight mb-4
         "
         />
 
@@ -325,10 +326,13 @@ export default function DocumentPage() {
           <EditorToolbar editor={editor} />
 
           {/* Editor content */}
-          <div className="px-8 py-6 text-[15px] leading-7">
+          <div className="px-8 py-4 text-[15px] leading-7 min-h-[300px]">
             <EditorContent editor={editor} />
           </div>
         </div>
+
+        {/* AI Assistant Section */}
+        <AIAssistant content={content} />
 
         {/* Bottom meta */}
         <div className="mt-4 flex items-center justify-between text-xs text-zinc-400 px-1">
