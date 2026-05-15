@@ -20,11 +20,8 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
-      You are a professional editor and writing assistant. 
-      Your task is to take the following text and rewrite it to sound more professional, sophisticated, and clear. 
-      Improve the vocabulary, fix any awkward phrasing, and ensure a confident, business-appropriate tone while keeping the original meaning intact.
-
-      Format your response by providing the 'Polished Version' first, followed by a brief 'Key Improvements' section explaining what was changed.
+      You are a professional editor. Rewrite the following text to sound more professional, sophisticated, and clear. 
+      Return ONLY the polished text. Do not include any headers, explanations, or introductory remarks.
 
       Text to polish:
       ${plainText}

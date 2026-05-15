@@ -326,7 +326,7 @@ export default function DocumentPage() {
           <EditorToolbar editor={editor} />
 
           {/* Editor content */}
-          <div className="px-8 py-4 text-[15px] leading-7 min-h-[300px]">
+          <div className="px-8 py-4 text-[15px] leading-7 min-h-75">
             <EditorContent editor={editor} />
           </div>
         </div>
