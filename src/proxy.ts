@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -16,15 +16,15 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   const {
@@ -33,8 +33,13 @@ export async function middleware(request: NextRequest) {
 
   // --- PROTECTING ROUTES ---
 
-  // 1. If trying to access /dashboard and NOT logged in
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  // 1. If trying to access protected routes and NOT logged in
+  const protectedPaths = ["/dashboard", "/notes", "/profile", "/settings"];
+  const isProtectedPath = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path),
+  );
+
+  if (!user && isProtectedPath) {
     // Capture the current path to redirect back later
     const currentPath = request.nextUrl.pathname;
     const loginUrl = new URL("/auth/sign-in", request.url);
@@ -58,5 +63,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/sign-in", "/auth/sign-up"],
+  matcher: [
+    "/dashboard/:path*",
+    "/notes/:path*",
+    "/profile/:path*",
+    "/settings/:path*",
+    "/auth/sign-in",
+    "/auth/sign-up",
+  ],
 };

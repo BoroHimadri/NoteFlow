@@ -20,20 +20,24 @@ export async function POST(
     );
   }
 
-  // 2. Add the guest to the collaborators table as 'pending'
-  const { error } = await supabase.from("collaborators").insert([
-    {
-      document_id: id,
-      email: user.email,
-      user_id: user.id, // This is the guest's ID
-      status: "pending",
-    },
-  ]);
+  // 2. Add or update the guest in the collaborators table as 'pending'
+  // Use upsert to handle cases where they click twice or re-request after a decline
+  const { error } = await supabase.from("collaborators").upsert(
+    [
+      {
+        document_id: id,
+        email: user.email,
+        user_id: user.id,
+        status: "pending",
+      },
+    ],
+    { onConflict: "document_id,user_id" }
+  );
 
-  // If they already requested, Supabase will throw a 'unique constraint' error
   if (error) {
+    console.error("Supabase Request Error:", error);
     return NextResponse.json(
-      { error: "Request already sent or error occurred" },
+      { error: error.message },
       { status: 500 }
     );
   }

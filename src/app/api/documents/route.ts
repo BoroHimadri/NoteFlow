@@ -16,7 +16,7 @@ export async function GET() {
   // 2. Fetch data (RLS will automatically filter for owner + collaborators)
   const { data, error } = await supabase
     .from("documents")
-    .select("id, title, content, created_at, user_id") // Added user_id
+    .select("id, title, content, created_at, user_id, is_pinned") // Added user_id and is_pinned
     .order("created_at", { ascending: false });
 
   if (error) {

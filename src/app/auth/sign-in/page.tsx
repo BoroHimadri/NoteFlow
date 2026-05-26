@@ -5,7 +5,9 @@ import { loginCred } from "@/src/types";
 import { useState } from "react";
 import { createClient } from "@/src/services/supabase/client";
 
-const page = () => {
+import { Suspense } from "react";
+
+const SignInForm = () => {
   const {
     register,
     handleSubmit,
@@ -14,10 +16,15 @@ const page = () => {
   const [errorMessage, setError] = useState("");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Get the 'next' destination (e.g., /dashboard/documents/123)
+  const nextDestination = searchParams.get("next") || "/dashboard";
+
   const onSubmit = async (data: loginCred) => {
     const { email, password } = data;
-    const { data: res, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -31,7 +38,9 @@ const page = () => {
       }
       return;
     }
-    router.push("/dashboard");
+    
+    // Redirect to the intended destination
+    router.push(nextDestination);
     router.refresh();
   };
 
@@ -137,13 +146,21 @@ const page = () => {
           </button>
           <p className="text-gray-500/90 text-sm mt-4">
             Don’t have an account?{" "}
-            <a className="text-indigo-400 hover:underline" href="/auth/sign-up">
+            <a className="text-indigo-400 hover:underline" href={`/auth/sign-up?next=${nextDestination}`}>
               Sign up
             </a>
           </p>
         </form>
       </div>
     </div>
+  );
+};
+
+const page = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   );
 };
 

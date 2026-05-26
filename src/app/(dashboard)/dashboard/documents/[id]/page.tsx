@@ -1,14 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/src/lib/axios";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { Button } from "@/src/components/ui/button";
-import { ArrowLeft, Check, Clock, LockIcon, Share2Icon } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Clock,
+  LockIcon,
+  Share2Icon,
+  Globe,
+  Shield,
+} from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import { Spinner } from "@/src/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
 
 import { EditorContent } from "@tiptap/react";
 import EditorToolbar from "@/src/components/common/EditorToolbar";
@@ -18,10 +34,13 @@ import AIAssistant from "@/src/components/dashboard/AIAssistant";
 
 export default function DocumentPage() {
   const params = useParams();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const debouncedContent = useDebounce(content, 1000); // Wait 1s
   const debouncedTitle = useDebounce(title, 1000);
@@ -43,6 +62,7 @@ export default function DocumentPage() {
     setHasLoadedInitialData(false);
     setTitle("");
     setContent("");
+    setIsPublic(false);
     setActiveId(null);
     lastSavedRef.current = { title: "", content: "" };
     if (editor && !editor.isDestroyed) {
@@ -68,21 +88,34 @@ export default function DocumentPage() {
     queryFn: async () => {
       if (!id || id === "undefined") return null;
 
-      const res = await api.get(`/documents/${id}`);
-      return res.data.data;
+      try {
+        const res = await api.get(`/documents/${id}`);
+        return res.data.data;
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          // If 401, they need to log in
+          const currentPath = window.location.pathname;
+          router.push(`/auth/sign-in?next=${currentPath}`);
+          return null;
+        }
+        throw err;
+      }
     },
     enabled: !!id && id !== "undefined",
     retry: false,
-    staleTime: 0, // Always consider data stale so it refetches on mount
-    gcTime: 0, // Don't cache this for long
+    staleTime: 0,
+    gcTime: 0,
+    throwOnError: false, // Prevents React Query from logging the error as a crash
   });
 
   //updating the note
   const mutation = useMutation({
-    mutationFn: (updates: { title: string; content: string }) =>
-      api.patch(`/documents/${id}`, updates),
+    mutationFn: (updates: {
+      title?: string;
+      content?: string;
+      is_public?: boolean;
+    }) => api.patch(`/documents/${id}`, updates),
     onSuccess: () => {
-      // Invalidate the query to ensure we have the latest version in the cache
       queryClient.invalidateQueries({ queryKey: ["document", id] });
     },
   });
@@ -90,20 +123,18 @@ export default function DocumentPage() {
   // Sync state when data arrives
   useEffect(() => {
     if (doc && editor && !hasLoadedInitialData) {
-      console.log("Syncing initial data:", { title: doc.title, id });
-
       const initialTitle = doc.title || "";
       const initialContent = doc.content || "";
+      const initialIsPublic = !!doc.is_public;
 
       setTitle(initialTitle);
       setContent(initialContent);
+      setIsPublic(initialIsPublic);
       editor.commands.setContent(initialContent, { emitUpdate: false });
 
-      // Initialize tracking refs with the actual data from DB
       lastSavedRef.current = { title: initialTitle, content: initialContent };
       setActiveId(id);
 
-      // Small delay to let the state settle before allowing auto-save
       const timer = setTimeout(() => {
         setHasLoadedInitialData(true);
       }, 500);
@@ -111,6 +142,16 @@ export default function DocumentPage() {
       return () => clearTimeout(timer);
     }
   }, [doc, editor, hasLoadedInitialData, id]);
+
+  const togglePublicStatus = (status: boolean) => {
+    setIsPublic(status);
+    mutation.mutate({ is_public: status });
+    toast.success(
+      status
+        ? "Anyone with the link can now view this note."
+        : "Access restricted to invited members."
+    );
+  };
 
   // Auto-save logic
   useEffect(() => {
@@ -122,17 +163,14 @@ export default function DocumentPage() {
     )
       return;
 
-    // 1. Only save if the debounced values have "settled" (match the current state)
     const isSettled = debouncedTitle === title && debouncedContent === content;
     if (!isSettled) return;
 
-    // 2. Only save if something has actually changed from what's on the server
     const hasChanged =
       debouncedTitle !== lastSavedRef.current.title ||
       debouncedContent !== lastSavedRef.current.content;
 
     if (hasChanged) {
-      // Capture current values to update ref on success
       const titleToSave = debouncedTitle;
       const contentToSave = debouncedContent;
 
@@ -162,24 +200,19 @@ export default function DocumentPage() {
   ]);
 
   const handleCopyLink = () => {
-    // 1. Get the current URL
     const shareUrl = window.location.href;
-    // 2. Write to clipboard
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        toast.success("Link copied! Share it with your collaborator.");
+        toast.success("Link copied!");
       })
       .catch((err) => {
-        console.error("Could not copy text: ", err);
         toast.error("Failed to copy link.");
       });
   };
 
   const handleShare = () => {
-    handleCopyLink();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setIsShareModalOpen(true);
   };
 
   //request access api
@@ -191,7 +224,7 @@ export default function DocumentPage() {
     onSuccess: () => {
       toast.success("Access requested! The owner will review your request.");
     },
-    onError: (error: { response?: { data?: { error?: string } } }) => {
+    onError: (error: any) => {
       const message =
         error.response?.data?.error || "Failed to request access.";
       toast.error(message);
@@ -238,6 +271,108 @@ export default function DocumentPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <ToastContainer />
 
+      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+        <DialogContent className="sm:max-w-125 rounded-3xl p-8">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Share2Icon className="w-5 h-5 text-purple-600" />
+              Share this note
+            </DialogTitle>
+            <DialogDescription className="text-sm text-zinc-500">
+              Control who can view and edit this document.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 space-y-4">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">
+              General Access
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => togglePublicStatus(false)}
+                variant="ghost"
+                className={`flex items-center justify-start gap-4 p-4 h-auto rounded-2xl border-2 transition-all text-left ${
+                  !isPublic
+                    ? "border-purple-600 bg-purple-50/50 dark:bg-purple-900/10"
+                    : "border-transparent bg-zinc-50 dark:bg-zinc-800/50 hover:border-zinc-200"
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-xl shrink-0 ${
+                    !isPublic
+                      ? "bg-purple-600 text-white"
+                      : "bg-zinc-200 dark:bg-zinc-700 text-zinc-500"
+                  }`}
+                >
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                    Restricted access
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    Only people invited can access this document.
+                  </p>
+                </div>
+              </Button>
+
+              <Button
+                onClick={() => togglePublicStatus(true)}
+                variant="ghost"
+                className={`flex items-center justify-start gap-4 p-4 h-auto rounded-2xl border-2 transition-all text-left ${
+                  isPublic
+                    ? "border-purple-600 bg-purple-50/50 dark:bg-purple-900/10"
+                    : "border-transparent bg-zinc-50 dark:bg-zinc-800/50 hover:border-zinc-200"
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-xl shrink-0 ${
+                    isPublic
+                      ? "bg-purple-600 text-white"
+                      : "bg-zinc-200 dark:bg-zinc-700 text-zinc-500"
+                  }`}
+                >
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                    Anyone with the link
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    Publicly viewable by everyone with the URL.
+                  </p>
+                </div>
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <Button
+                onClick={handleCopyLink}
+                className="w-full h-12 bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98]"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Link Copied!
+                  </>
+                ) : (
+                  <>
+                    <Share2Icon className="w-4 h-4 mr-2" />
+                    Copy Link to Share
+                  </>
+                )}
+              </Button>
+              <p className="text-[10px] text-center text-zinc-400 mt-3 font-medium">
+                {isPublic
+                  ? "Anyone with this link can view the document."
+                  : "Only approved collaborators can use this link."}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Top bar ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-20 bg-[#FAFAF8]/90 backdrop-blur-sm border-b border-zinc-200/60">
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
@@ -276,27 +411,10 @@ export default function DocumentPage() {
             <Button
               onClick={handleShare}
               size="sm"
-              className={`
-              flex items-center gap-2 rounded-xl px-4 h-8 text-xs font-medium
-              transition-all duration-200
-              ${
-                copied
-                  ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
-              }
-            `}
+              className="flex items-center gap-2 rounded-xl px-4 h-8 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-lg shadow-purple-200/20"
             >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Share2Icon className="w-3.5 h-3.5" />
-                  Share
-                </>
-              )}
+              <Share2Icon className="w-3.5 h-3.5" />
+              Share
             </Button>
           </div>
         </div>

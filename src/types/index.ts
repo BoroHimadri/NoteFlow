@@ -7,6 +7,6 @@ export interface Note {
   id: string;
   title: string;
   content: string;
-  pinned?: boolean;
+  is_pinned?: boolean;
   created_at: string;
 }

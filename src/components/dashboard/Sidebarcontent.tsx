@@ -35,13 +35,7 @@ const NAV_SECTIONS = [
 
 export default function SidebarContent() {
   const pathname = usePathname();
-
   const router = useRouter();
-
-  const handleLogout = async () => {
-    await api.post("/signout");
-    router.push("/auth/sign-in");
-  };
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 px-3 py-5">
@@ -131,19 +125,6 @@ export default function SidebarContent() {
               Logout
             </Button>
           </form>
-          {/* <Button
-            onClick={handleLogout}
-            className="
-            flex items-center gap-2 w-full
-            bg-purple-500 hover:bg-purple-700
-            text-white text-sm font-medium
-            p-5 rounded-xl
-            transition-colors duration-150
-          "
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button> */}
         </div>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
           <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-xs font-medium text-purple-700 dark:text-purple-300 shrink-0">
