@@ -12,8 +12,11 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "../ui/button";
-import api from "@/src/lib/axios";
 import { signOut } from "@/src/app/auth/action";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/src/lib/axios";
+import { useAccessRequests } from "@/src/hooks/useAccessRequests";
+import Notifications from "./Notifications";
 
 const NAV_SECTIONS = [
   {
@@ -28,7 +31,7 @@ const NAV_SECTIONS = [
     label: "Account",
     items: [
       { name: "Profile", href: "/profile", icon: User },
-      { name: "Settings", href: "/settings", icon: Settings },
+      // { name: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -37,8 +40,12 @@ export default function SidebarContent() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const { data: requests } = useAccessRequests();
+
+  const pendingCount = requests?.length || 0;
+
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 px-3 py-5">
+    <div className="flex h-full flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 px-3 py-5 overflow-y-auto scrollbar-hide">
       {/* Brand */}
       <div className="px-3 mb-6 ">
         <span className="font-serif text-xl text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -100,6 +107,11 @@ export default function SidebarContent() {
                       }`}
                     />
                     {item.name}
+                    {item.name === "Dashboard" && pendingCount > 0 && (
+                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white">
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -107,6 +119,11 @@ export default function SidebarContent() {
           </div>
         ))}
       </nav>
+
+      {/* Notifications in sidebar */}
+      <div className="mt-6 mb-4">
+        <Notifications />
+      </div>
 
       {/* User pill at the bottom */}
       <div className="mt-4 px-1">

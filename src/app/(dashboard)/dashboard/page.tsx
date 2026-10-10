@@ -53,9 +53,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-12">
-      {/* Notifications Row */}
-      <Notifications />
-
       {/* Page heading */}
       <div className=" flex flex-col">
         <h1 className="font-serif text-2xl text-zinc-900 dark:text-zinc-50 mt-7 lg:mt-0">

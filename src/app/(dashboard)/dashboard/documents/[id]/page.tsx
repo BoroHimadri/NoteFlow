@@ -31,6 +31,8 @@ import EditorToolbar from "@/src/components/common/EditorToolbar";
 import Loader from "@/src/components/common/Loader";
 import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
 import AIAssistant from "@/src/components/dashboard/AIAssistant";
+import Notifications from "@/src/components/dashboard/Notifications";
+import { useAccessRequests } from "@/src/hooks/useAccessRequests";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -215,6 +217,9 @@ export default function DocumentPage() {
     setIsShareModalOpen(true);
   };
 
+  // Fetch pending requests for badge
+  const { data: pendingRequests } = useAccessRequests(id);
+
   //request access api
   const requestMutation = useMutation({
     mutationFn: async (documentId: string) => {
@@ -347,6 +352,10 @@ export default function DocumentPage() {
             </div>
 
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+               <Notifications documentId={id} />
+            </div>
+
+            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
               <Button
                 onClick={handleCopyLink}
                 className="w-full h-12 bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98]"
@@ -411,10 +420,13 @@ export default function DocumentPage() {
             <Button
               onClick={handleShare}
               size="sm"
-              className="flex items-center gap-2 rounded-xl px-4 h-8 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-lg shadow-purple-200/20"
+              className="relative flex items-center gap-2 rounded-xl px-4 h-8 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-lg shadow-purple-200/20"
             >
               <Share2Icon className="w-3.5 h-3.5" />
               Share
+              {pendingRequests && pendingRequests.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white dark:border-zinc-900 rounded-full" />
+              )}
             </Button>
           </div>
         </div>

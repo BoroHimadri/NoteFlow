@@ -17,8 +17,6 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname?.includes("/documents/")) return null; // ← hide on doc pages
-
   return (
     <>
       {/* Desktop sidebar */}
