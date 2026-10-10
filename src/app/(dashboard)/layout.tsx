@@ -13,7 +13,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex">
-      <Sidebar />
+      {!isDocumentPage && <Sidebar />}
       <main className={`flex-1 ${isDocumentPage ? "" : "lg:pl-64"}`}>
         <div className={`${isDocumentPage ? "" : "lg:p-8"} w-full`}>{children}</div>
       </main>

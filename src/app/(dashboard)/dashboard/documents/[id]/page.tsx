@@ -240,6 +240,23 @@ export default function DocumentPage() {
     requestMutation.mutate(id);
   };
 
+  const handleApplyPolished = (polished: string) => {
+    if (!editor) return;
+
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const html = polished
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+      .join("");
+
+    editor.commands.setContent(html);
+    editor.commands.focus("end");
+  };
+
   if (isLoading) return <Loader />;
 
   //The Request Access
@@ -462,7 +479,7 @@ export default function DocumentPage() {
         </div>
 
         {/* AI Assistant Section */}
-        <AIAssistant content={content} />
+        <AIAssistant content={content} onApply={handleApplyPolished} />
 
         {/* Bottom meta */}
         <div className="mt-4 flex items-center justify-between text-xs text-zinc-400 px-1">

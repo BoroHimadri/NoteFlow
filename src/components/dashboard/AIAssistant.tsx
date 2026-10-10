@@ -16,9 +16,10 @@ import { toast } from "react-toastify";
 
 interface AIAssistantProps {
   content: string;
+  onApply?: (polished: string) => void;
 }
 
-export default function AIAssistant({ content }: AIAssistantProps) {
+export default function AIAssistant({ content, onApply }: AIAssistantProps) {
   const [summary, setSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -56,6 +57,12 @@ export default function AIAssistant({ content }: AIAssistantProps) {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleApply = () => {
+    if (!summary) return;
+    onApply?.(summary);
+    toast.success("Polished version applied to your note!");
   };
 
   const handleCopy = async () => {
@@ -227,6 +234,16 @@ export default function AIAssistant({ content }: AIAssistantProps) {
                   <div className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm whitespace-pre-wrap">
                     {summary}
                   </div>
+
+                  <Button
+                    onClick={handleApply}
+                    className="w-full flex items-center justify-center gap-2 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all active:scale-[0.98]"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    <span className="text-sm font-semibold">
+                      Apply to Note
+                    </span>
+                  </Button>
 
                   <Button
                     onClick={handleCopy}
