@@ -44,6 +44,22 @@ const SignInForm = () => {
     router.refresh();
   };
 
+  const handleGoogleSignIn = async () => {
+    setError("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+          nextDestination
+        )}`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="flex h-175 w-full px-48">
       <div className="w-full hidden md:inline-block">
@@ -63,6 +79,7 @@ const SignInForm = () => {
 
           <button
             type="button"
+            onClick={handleGoogleSignIn}
             className="w-full mt-8 cursor-pointer bg-gray-500/10 flex items-center justify-center h-12 rounded-full"
           >
             <img
