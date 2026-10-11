@@ -124,6 +124,11 @@ export default function DocumentPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document", id] });
     },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.error || "Failed to save changes.";
+      toast.error(message);
+    },
   });
 
   // Sync state when data arrives
@@ -415,9 +420,9 @@ export default function DocumentPage() {
           {/* Left — back + save status */}
           <div className="flex items-center gap-4">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => router.push("/dashboard")}
               className="text-zinc-400 hover:text-zinc-700 transition-colors"
-              aria-label="Go back"
+              aria-label="Go back to dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
