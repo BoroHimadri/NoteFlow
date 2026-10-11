@@ -180,7 +180,10 @@ const SignUpForm = () => {
           </button>
           <p className="text-gray-500/90 text-sm mt-4">
             Already have an account?{" "}
-            <a className="text-indigo-400 hover:underline" href="/auth/sign-in">
+            <a
+              className="text-indigo-400 hover:underline"
+              href={`/auth/sign-in?next=${encodeURIComponent(nextDestination)}`}
+            >
               Sign in
             </a>
           </p>

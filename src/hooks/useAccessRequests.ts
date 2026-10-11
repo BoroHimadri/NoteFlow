@@ -3,9 +3,10 @@ import api from "@/src/lib/axios";
 
 export const ACCESS_REQUESTS_QUERY_KEY = ["access-requests"];
 
-export function useAccessRequests(documentId?: string) {
+export function useAccessRequests(documentId?: string, enabled = true) {
   return useQuery({
     queryKey: ACCESS_REQUESTS_QUERY_KEY,
+    enabled,
     queryFn: async () => {
       const res = await api.get("/collaborators/requests");
       return res.data.requests || [];
@@ -16,7 +17,9 @@ export function useAccessRequests(documentId?: string) {
       }
       return requests;
     },
-    refetchInterval: 30000, // 30 seconds
-    staleTime: 10000, // 10 seconds
+    // Fallback so the owner still sees new requests even if realtime drops
+    refetchInterval: enabled ? 15000 : false,
+    refetchOnWindowFocus: enabled,
+    staleTime: 5000,
   });
 }

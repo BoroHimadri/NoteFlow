@@ -9,7 +9,16 @@ export async function GET(
     const { id } = await params;
     const supabase = createClient();
 
-    // 1. Fetch the document FIRST
+    // 1. A logged-in user is ALWAYS required to open a note (public or not)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Fetch the document
     const { data: doc, error } = await supabase
       .from("documents")
       .select("*")
@@ -19,39 +28,42 @@ export async function GET(
     if (error || !doc)
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-    // 2. Case A: Document is PUBLIC - Allow everyone immediately
-    if (doc.is_public === true) {
-      return NextResponse.json({ success: true, data: doc });
-    }
-
-    // 3. Get current user for private documents
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // 4. Case B: Document is PRIVATE and user is not logged in
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // 5. Case C: User is the OWNER
+    // 3. Case A: User is the OWNER
     if (doc.user_id === user.id) {
-      return NextResponse.json({ success: true, data: doc });
+      return NextResponse.json({
+        success: true,
+        data: { ...doc, canEdit: true, isOwner: true },
+      });
     }
 
-    // 6. Case D: Check if user is an accepted collaborator
+    // 4. Check if user is an accepted collaborator
     const { data: collaborator } = await supabase
       .from("collaborators")
-      .select("*")
+      .select("status")
       .eq("document_id", id)
       .eq("user_id", user.id)
       .eq("status", "accepted")
       .single();
 
-    if (collaborator) {
-      return NextResponse.json({ success: true, data: doc });
+    const canEdit = !!collaborator;
+
+    // 5. Case B: Public document - any logged-in user can edit it collaboratively
+    if (doc.is_public === true) {
+      return NextResponse.json({
+        success: true,
+        data: { ...doc, canEdit: true, isOwner: false },
+      });
     }
 
-    // 7. Case E: Access Required (Redirect to request screen)
-    return NextResponse.json({ error: "Access Required" }, { status: 403 });
+    // 6. Case C: Private and not an accepted collaborator
+    if (!canEdit) {
+      return NextResponse.json({ error: "Access Required" }, { status: 403 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { ...doc, canEdit: true, isOwner: false },
+    });
   } catch (err: any) {
     console.error("GET Document Error:", err);
     return NextResponse.json(
@@ -84,8 +96,9 @@ export async function PATCH(
     if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // 3. Update logic
-    const canUpdate = doc.user_id === user.id; // Only owner for now for is_public, but let's allow edits for collaborators
-    
+    const canUpdate = doc.user_id === user.id;
+    const docIsPublic = doc.is_public === true; // Public notes are collaboratively editable
+
     // Check if user is an accepted collaborator if not owner
     let isCollaborator = false;
     if (!canUpdate) {
@@ -99,7 +112,7 @@ export async function PATCH(
       if (collaborator) isCollaborator = true;
     }
 
-    if (!canUpdate && !isCollaborator) {
+    if (!canUpdate && !isCollaborator && !docIsPublic) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

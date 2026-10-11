@@ -33,6 +33,7 @@ import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
 import AIAssistant from "@/src/components/dashboard/AIAssistant";
 import Notifications from "@/src/components/dashboard/Notifications";
 import { useAccessRequests } from "@/src/hooks/useAccessRequests";
+import { useRealtimeDocuments } from "@/src/hooks/useRealtimeDocuments";
 
 export default function DocumentPage() {
   const params = useParams();
@@ -58,6 +59,9 @@ export default function DocumentPage() {
     setContent(html);
     setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
   });
+
+  // live sync when another collaborator edits this document
+  useRealtimeDocuments(id);
 
   // Reset state when ID changes
   useEffect(() => {
@@ -150,7 +154,7 @@ export default function DocumentPage() {
     mutation.mutate({ is_public: status });
     toast.success(
       status
-        ? "Anyone with the link can now view this note."
+        ? "Anyone with the link can now edit this note."
         : "Access restricted to invited members."
     );
   };
@@ -217,8 +221,12 @@ export default function DocumentPage() {
     setIsShareModalOpen(true);
   };
 
+  // Only the owner of a restricted note can receive/see access requests
+  const isOwner = !!doc?.isOwner;
+  const showRequests = isOwner && !isPublic;
+
   // Fetch pending requests for badge
-  const { data: pendingRequests } = useAccessRequests(id);
+  const { data: pendingRequests } = useAccessRequests(id, showRequests);
 
   //request access api
   const requestMutation = useMutation({
@@ -362,15 +370,17 @@ export default function DocumentPage() {
                     Anyone with the link
                   </p>
                   <p className="text-[11px] text-zinc-500">
-                    Publicly viewable by everyone with the URL.
+                    Anyone with the link can edit this document.
                   </p>
                 </div>
               </Button>
             </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-               <Notifications documentId={id} />
-            </div>
+            {!isPublic && isOwner && (
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <Notifications documentId={id} />
+              </div>
+            )}
 
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
               <Button
@@ -391,7 +401,7 @@ export default function DocumentPage() {
               </Button>
               <p className="text-[10px] text-center text-zinc-400 mt-3 font-medium">
                 {isPublic
-                  ? "Anyone with this link can view the document."
+                  ? "Anyone with this link can edit the document."
                   : "Only approved collaborators can use this link."}
               </p>
             </div>

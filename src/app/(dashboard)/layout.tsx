@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Sidebar from "@/src/components/dashboard/Sidebar";
+import { useRealtimeAccessRequests } from "@/src/hooks/useRealtimeAccessRequests";
 
 export default function DashboardLayout({
   children,
@@ -10,6 +11,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const isDocumentPage = pathname?.includes("/documents/");
+
+  useRealtimeAccessRequests();
 
   return (
     <div className="flex">

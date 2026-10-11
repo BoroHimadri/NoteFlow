@@ -3,7 +3,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 
 export const useDocumentEditor = (
-  onUpdateAction: (html: string, text: string) => void
+  onUpdateAction: (html: string, text: string) => void,
+  editable = true
 ) => {
   return useEditor({
     extensions: [
@@ -13,6 +14,7 @@ export const useDocumentEditor = (
       }),
     ],
     content: "",
+    editable,
     immediatelyRender: false,
     onUpdate({ editor }) {
       onUpdateAction(editor.getHTML(), editor.getText());

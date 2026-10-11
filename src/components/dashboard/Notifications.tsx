@@ -20,6 +20,12 @@ export default function Notifications({ documentId }: { documentId?: string }) {
       queryClient.invalidateQueries({ queryKey: ACCESS_REQUESTS_QUERY_KEY });
       toast.success(variables.status === "accepted" ? "Access granted!" : "Request declined.");
     },
+    onError: (error) => {
+      const message =
+        (error as { response?: { data?: { error?: string } } }).response?.data
+          ?.error || "Could not update request.";
+      toast.error(message);
+    },
   });
 
   if (isLoading) return null;

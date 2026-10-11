@@ -30,7 +30,7 @@ export async function GET() {
     
     const { data: relatedDocs, error: docError } = await supabase
       .from("documents")
-      .select("id, title, user_id")
+      .select("id, title, user_id, is_public")
       .in("id", requestDocIds);
 
     if (docError) {
@@ -38,13 +38,17 @@ export async function GET() {
       return NextResponse.json({ error: docError.message }, { status: 500 });
     }
 
-    // 3. Combine and filter: Only keep requests for documents owned by the current user
+    // 3. Combine and filter: Only keep requests for PRIVATE documents owned by the current user
     const filteredRequests = allRequests
       .map(request => {
         const doc = relatedDocs.find(d => d.id === request.document_id);
         return { ...request, documents: doc };
       })
-      .filter(request => request.documents?.user_id === user.id);
+      .filter(
+        request =>
+          request.documents?.user_id === user.id &&
+          request.documents?.is_public !== true
+      );
 
     console.log("Filtered requests for owner:", filteredRequests.length);
 
@@ -87,12 +91,20 @@ export async function PATCH(request: Request) {
     }
 
     // Update status
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("collaborators")
       .update({ status })
-      .eq("id", requestId);
+      .eq("id", requestId)
+      .select("id");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (!updated || updated.length === 0) {
+      return NextResponse.json(
+        { error: "Update was blocked (check RLS policies)" },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -10,6 +10,7 @@ import { Note } from "@/src/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, FileText, Pin } from "lucide-react";
 import Notifications from "@/src/components/dashboard/Notifications";
+import { useRealtimeDocuments } from "@/src/hooks/useRealtimeDocuments";
 
 const fetchDocuments = async () => {
   const { data } = await api.get("/documents");
@@ -23,6 +24,7 @@ const togglePinDocument = async ({ id, is_pinned }: { id: string; is_pinned: boo
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  useRealtimeDocuments();
   const { data, isLoading, error } = useQuery({
     queryKey: ["documents"],
     queryFn: fetchDocuments,
@@ -90,6 +92,9 @@ export default function Dashboard() {
           dotColor="bg-blue-500"
         />
       </div>
+
+      {/* Access requests */}
+      <Notifications />
 
       {/* Pinned notes */}
       <section>

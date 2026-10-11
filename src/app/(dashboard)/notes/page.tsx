@@ -9,6 +9,7 @@ import NoteCardSkeleton from "@/src/components/dashboard/NoteCardSkeleton";
 import NewNoteCard from "@/src/components/dashboard/NewNoteCard";
 import { AlertCircle, FileText, Pin } from "lucide-react";
 import { Suspense } from "react";
+import { useRealtimeDocuments } from "@/src/hooks/useRealtimeDocuments";
 
 const fetchDocuments = async () => {
   const { data } = await api.get("/documents");
@@ -24,6 +25,8 @@ function NotesContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const filter = searchParams.get("filter");
+
+  useRealtimeDocuments();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["documents"],
