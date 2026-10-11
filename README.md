@@ -9,6 +9,7 @@
 - 🔐 **Authentication**
 
   - Email & password login using Supabase Auth
+  - Google OAuth authentication
   - Secure session management
 
 - 📝 **Notes Management**
@@ -80,7 +81,6 @@ This project demonstrates:
 - AI-powered note suggestions
 - Rich text editor (Tiptap)
 - Collaboration features
-- Google OAuth login
 
 ---
 

@@ -15,6 +15,7 @@ import { Button } from "../ui/button";
 import { signOut } from "@/src/app/auth/action";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/src/lib/axios";
+import { createClient } from "@/src/services/supabase/client";
 import { useAccessRequests } from "@/src/hooks/useAccessRequests";
 import Notifications from "./Notifications";
 
@@ -39,10 +40,32 @@ const NAV_SECTIONS = [
 export default function SidebarContent() {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
 
   const { data: requests } = useAccessRequests();
 
   const pendingCount = requests?.length || 0;
+
+  const { data: user } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const email: string = user?.email ?? "";
+  const name: string =
+    user?.user_metadata?.full_name || user?.user_metadata?.name || "";
+  const displayName = name || email;
+  const initials = (name || email)
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 px-3 py-5 overflow-y-auto scrollbar-hide">
@@ -145,14 +168,14 @@ export default function SidebarContent() {
         </div>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
           <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-xs font-medium text-purple-700 dark:text-purple-300 shrink-0">
-            AK
+            {initials || "?"}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate leading-none mb-0.5">
-              Test User
+              {displayName || "…"}
             </p>
             <p className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate">
-              test@noteflow.app
+              {email}
             </p>
           </div>
         </div>
