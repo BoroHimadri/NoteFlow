@@ -255,19 +255,27 @@ export default function DocumentPage() {
 
   const handleApplyPolished = (polished: string) => {
     if (!editor) return;
+    editor.commands.setContent(textToHtml(polished));
+    editor.commands.focus("end");
+  };
 
+  const handleAppendContinued = (continued: string) => {
+    if (!editor) return;
+    editor.commands.setContent(editor.getHTML() + textToHtml(continued));
+    editor.commands.focus("end");
+  };
+
+  // Convert AI plain-text output into Tiptap HTML blocks
+  const textToHtml = (text: string) => {
     const escapeHtml = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    const html = polished
+    return text
       .split(/\n{2,}/)
       .map((p) => p.trim())
       .filter(Boolean)
       .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
       .join("");
-
-    editor.commands.setContent(html);
-    editor.commands.focus("end");
   };
 
   if (isLoading) return <Loader />;
@@ -494,7 +502,11 @@ export default function DocumentPage() {
         </div>
 
         {/* AI Assistant Section */}
-        <AIAssistant content={content} onApply={handleApplyPolished} />
+        <AIAssistant
+          content={content}
+          onApply={handleApplyPolished}
+          onAppend={handleAppendContinued}
+        />
 
         {/* Bottom meta */}
         <div className="mt-4 flex items-center justify-between text-xs text-zinc-400 px-1">

@@ -9,6 +9,10 @@ import {
   ChevronRight,
   Menu,
   X,
+  Wand2,
+  ListChecks,
+  PenLine,
+  Bot,
 } from "lucide-react";
 
 export const FEATURES = [
@@ -46,6 +50,33 @@ export const FEATURES = [
     icon: Smartphone,
     title: "Works Everywhere",
     desc: "Available on web, iOS, and Android. Your notes sync instantly across all devices.",
+    accent: "bg-violet-50 text-violet-600",
+  },
+];
+
+export const AI_FEATURES = [
+  {
+    icon: Wand2,
+    title: "Polish Writing",
+    desc: "Rough thoughts become professional, sophisticated prose with one click.",
+    accent: "bg-purple-50 text-purple-600",
+  },
+  {
+    icon: ListChecks,
+    title: "Smart Summaries",
+    desc: "Instantly distil any note into a one-line TL;DR and key bullet points.",
+    accent: "bg-violet-50 text-violet-600",
+  },
+  {
+    icon: PenLine,
+    title: "Continue Writing",
+    desc: "Stuck on a blank page? AI keeps the flow going from where you stopped.",
+    accent: "bg-purple-50 text-purple-600",
+  },
+  {
+    icon: Bot,
+    title: "Ask Your Notes",
+    desc: "Chat with your notes and get answers grounded in your own content.",
     accent: "bg-violet-50 text-violet-600",
   },
 ];

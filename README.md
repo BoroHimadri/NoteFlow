@@ -26,9 +26,13 @@
   - Built with Tailwind CSS and shadcn/ui
   - Responsive and clean dashboard layout
 
-- 🤖 **AI Integration**
+- 🤖 **AI Integration (Gemini)**
 
-  - Smart suggestions / summarization (future enhancement)(in the making...)
+  - **Polish** — rewrites your writing to be professional and clear
+  - **Summarize** — one-click TL;DR with key points
+  - **Continue Writing** — AI drafts the next part of your note
+  - **Ask AI** — chat with your note & get answers from its content
+  - Credit-based usage tracking per session
 
 ---
 
@@ -37,6 +41,8 @@
 - **Frontend:** Next.js (App Router), TypeScript
 - **UI:** Tailwind CSS, shadcn/ui
 - **Backend (BaaS):** Supabase
+- **AI:** Google Gemini (via GoogleGenerativeAI)
+- **Editor:** Tiptap (rich text)
 - **Forms:** React Hook Form
 - **Database:** PostgreSQL (via Supabase)
 
@@ -78,9 +84,9 @@ This project demonstrates:
 
 ## 🚧 Future Improvements
 
-- AI-powered note suggestions
-- Rich text editor (Tiptap)
-- Collaboration features
+- AI-powered semantic search across notes
+- Auto-tagging & smart title suggestions
+- Tone transform (formal ⇄ casual, expand ⇄ condense)
 
 ---
 

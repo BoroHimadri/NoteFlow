@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.NEXT_GOOGLE_API_KEY!);
+import { askGemini, stripHtml } from "@/src/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -14,28 +12,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Strip HTML tags for cleaner processing
-    const plainText = content.replace(/<[^>]*>/g, "");
-
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const plainText = stripHtml(content);
 
     const prompt = `
-      You are a professional editor. Rewrite the following text to sound more professional, sophisticated, and clear. 
-      Return ONLY the polished text. Do not include any headers, explanations, or introductory remarks.
+      You are a concise summarizer. Given the following note, produce:
+      1) A one-sentence TL;DR summary.
+      2) 3-6 bullet points of the most important key points.
 
-      Text to polish:
+      Use Markdown bullets. Return ONLY the summary and the key points, no extra text.
+
+      Note:
       ${plainText}
     `;
 
-    const result = await model.generateContent(prompt);
-    const aiResponse = result.response.text();
+    const summary = await askGemini(prompt);
 
-    return NextResponse.json({ summary: aiResponse });
-  } catch (error: any) {
+    return NextResponse.json({ summary });
+  } catch (error: unknown) {
     console.error("Gemini Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to generate AI response" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to generate AI response";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

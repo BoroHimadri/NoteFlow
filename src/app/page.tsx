@@ -4,11 +4,44 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Sparkles, Zap, ChevronRight, Menu, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { FEATURES, STATS } from "../lib/data";
+import { FEATURES, AI_FEATURES, STATS } from "../lib/data";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInView } from "../hooks/useInView";
+
+interface AIFeatureCardProps {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+  accent: string;
+  delay: number;
+}
+
+function AIFeatureCard({ icon: Icon, title, desc, accent, delay }: AIFeatureCardProps) {
+  const { ref, inView } = useInView(0.1);
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`
+        group bg-white border border-purple-100 rounded-2xl p-6
+        hover:border-purple-300 hover:shadow-lg hover:shadow-purple-100
+        transition-all duration-300 cursor-default
+        ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}
+      `}
+    >
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${accent} group-hover:scale-110 transition-transform duration-300`}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+      <h3 className="font-semibold text-zinc-900 mb-2">{title}</h3>
+      <p className="text-sm text-zinc-500 leading-relaxed">{desc}</p>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -309,6 +342,32 @@ export default function LandingPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── AI Features ── */}
+      <section className="py-24 px-5 bg-purple-50/30 border-y border-purple-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-purple-600 text-white border-purple-600 hover:bg-purple-600">
+              <Sparkles className="w-3 h-3 mr-1.5" />
+              Powered by Gemini
+            </Badge>
+            <h2 className="font-serif text-4xl sm:text-5xl text-zinc-900 leading-tight">
+              Meet your{" "}
+              <span className="italic text-purple-600">AI assistant</span>
+            </h2>
+            <p className="text-zinc-500 mt-4 max-w-xl mx-auto">
+              Four AI tools live inside every note — instantly ready whenever
+              your writing needs a hand.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {AI_FEATURES.map((f, i) => (
+              <AIFeatureCard key={f.title} {...f} delay={i * 80} />
+            ))}
           </div>
         </div>
       </section>
