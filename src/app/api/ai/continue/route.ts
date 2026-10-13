@@ -1,14 +1,28 @@
 import { NextResponse } from "next/server";
 import { askGemini, stripHtml } from "@/src/lib/gemini";
+import {
+  authenticateAiRequest,
+  MAX_CONTENT_LENGTH,
+} from "@/src/lib/aiGuard";
 
 export async function POST(req: Request) {
   try {
+    const unauthorized = await authenticateAiRequest();
+    if (unauthorized) return unauthorized;
+
     const { content } = await req.json();
 
-    if (!content) {
+    if (typeof content !== "string" || !content.trim()) {
       return NextResponse.json(
         { error: "Content is required" },
         { status: 400 }
+      );
+    }
+
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json(
+        { error: "Content is too large" },
+        { status: 413 }
       );
     }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
+import { createClient } from "@/src/services/supabase/client";
 
 export function useCollabSocket(roomId: string, onContentChange: (html: string) => void, onInitialState?: (html: string) => void) {
   const socketRef = useRef<Socket | null>(null);
@@ -17,24 +18,43 @@ export function useCollabSocket(roomId: string, onContentChange: (html: string) 
 
   useEffect(() => {
     if (!roomId || roomId === "undefined") return;
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
-    const socket = io(socketUrl);
-    socketRef.current = socket;
-    socket.emit("join-room", roomId);
 
-    socket.on("content-change", (data) => {
-      if (data.roomId === roomId && data.html !== undefined) {
-        onContentChangeRef.current(data.html);
-      }
-    });
-    socket.on("initial-state", (data) => {
-      if (data.roomId === roomId && data.html !== undefined) {
-        onInitialStateRef.current?.(data.html);
-      }
-    });
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
+    let socket: Socket | null = null;
+    let cancelled = false;
+
+    const connect = async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (cancelled) return;
+
+      socket = io(socketUrl, {
+        auth: { token: session?.access_token ?? "" },
+      });
+      socketRef.current = socket;
+      socket.emit("join-room", roomId);
+
+      socket.on("content-change", (data) => {
+        if (data.roomId === roomId && data.html !== undefined) {
+          onContentChangeRef.current(data.html);
+        }
+      });
+      socket.on("initial-state", (data) => {
+        if (data.roomId === roomId && data.html !== undefined) {
+          onInitialStateRef.current?.(data.html);
+        }
+      });
+    };
+
+    connect();
 
     return () => {
-      socket.disconnect();
+      cancelled = true;
+      socket?.disconnect();
+      socketRef.current = null;
     };
   }, [roomId]);
 
