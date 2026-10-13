@@ -29,7 +29,8 @@ import {
 import { EditorContent } from "@tiptap/react";
 import EditorToolbar from "@/src/components/common/EditorToolbar";
 import Loader from "@/src/components/common/Loader";
-import { useDocumentEditor } from "@/src/hooks/useDocumentEditor";
+import { useDocumentEditorSimple } from "@/src/hooks/useDocumentEditorSimple";
+import { useCollabSocket } from "@/src/hooks/useCollabSocket";
 import AIAssistant from "@/src/components/dashboard/AIAssistant";
 import Notifications from "@/src/components/dashboard/Notifications";
 import { useAccessRequests } from "@/src/hooks/useAccessRequests";
@@ -45,6 +46,7 @@ export default function DocumentPage() {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  const emitDebouncedContent = useDebounce(content, 100); // Emit every 100ms for real-time feel
   const debouncedContent = useDebounce(content, 1000); // Wait 1s
   const debouncedTitle = useDebounce(title, 1000);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -55,13 +57,18 @@ export default function DocumentPage() {
   const lastSavedRef = useRef({ title: "", content: "" });
 
   //edtor hook
-  const editor = useDocumentEditor((html, text) => {
+  const { editor, applyRemoteUpdate } = useDocumentEditorSimple(id, (html, text) => {
     setContent(html);
     setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
   });
 
   // live sync when another collaborator edits this document
   useRealtimeDocuments(id);
+  const { emitChange, syncState } = useCollabSocket(id, (html) => {
+    applyRemoteUpdate(html);
+  }, (html) => {
+    applyRemoteUpdate(html);
+  });
 
   // Reset state when ID changes
   useEffect(() => {
@@ -71,9 +78,7 @@ export default function DocumentPage() {
     setIsPublic(false);
     setActiveId(null);
     lastSavedRef.current = { title: "", content: "" };
-    if (editor && !editor.isDestroyed) {
-      editor.commands.setContent("", { emitUpdate: false });
-    }
+    if (editor && !editor.isDestroyed) {}
   }, [id, editor]);
 
   // Auto-resize title textarea
@@ -141,9 +146,12 @@ export default function DocumentPage() {
       setTitle(initialTitle);
       setContent(initialContent);
       setIsPublic(initialIsPublic);
-      editor.commands.setContent(initialContent, { emitUpdate: false });
+      if (editor && !editor.isDestroyed) {
+        editor.commands.setContent(initialContent || "", { emitUpdate: false });
+      }
 
       lastSavedRef.current = { title: initialTitle, content: initialContent };
+      syncState(initialContent || "");
       setActiveId(id);
 
       const timer = setTimeout(() => {
@@ -163,6 +171,12 @@ export default function DocumentPage() {
         : "Access restricted to invited members."
     );
   };
+
+  // Emit real-time changes
+  useEffect(() => {
+    if (!hasLoadedInitialData || !activeId || activeId !== id) return;
+    emitChange(content);
+  }, [emitDebouncedContent, hasLoadedInitialData, activeId, id]);
 
   // Auto-save logic
   useEffect(() => {
